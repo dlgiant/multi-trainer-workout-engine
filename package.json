@@ -1,0 +1,17 @@
+{
+  "name": "multi-trainer-workout-engine",
+  "version": "0.1.0",
+  "description": "MultiTrainer workout engine: pure TypeScript rules engine that drafts 4-6 week training blocks. No React, no Dexie.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.ts",
+    "test:watch": "node --test --watch tests/*.test.ts",
+    "demo": "node src/cli.ts",
+    "demo:bulk": "node src/cli.ts 100"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
