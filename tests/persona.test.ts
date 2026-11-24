@@ -33,5 +33,9 @@ test("persona: beginner, lumbar disc, dumbbells 2-12, apartment", () => {
   const sets3 = week3.reduce((n, s) => n + s.items.reduce((m, i) => m + i.sets, 0), 0);
   const sets4 = week4.reduce((n, s) => n + s.items.reduce((m, i) => m + i.sets, 0), 0);
   assert.ok(sets4 < sets3, "deload week must cut sets");
-  assert.ok(week4.every((s) => s.items.every((i) => i.targetRir >= 4)), "deload at RIR 4+");
+  // cardio é dosado por duração (menor no deload), não por RIR
+  assert.ok(
+    week4.every((s) => s.items.every((i) => i.block === "cardio" || i.targetRir >= 4)),
+    "deload at RIR 4+",
+  );
 });

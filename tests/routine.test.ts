@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { suggestStretches } from "../src/engine/routine.ts";
 import { CATALOGUE, RULES, byId } from "../src/engine/catalogue.ts";
 import { passesHardFilters } from "../src/engine/filters.ts";
-import { beginnerLumbarDiscDb, seniorKneeBandsOnly } from "./fixtures/clients.ts";
+import { acuteShoulder, beginnerLumbarDiscDb, intermediateHypertrophy, seniorKneeBandsOnly } from "./fixtures/clients.ts";
 
 test("every suggestion passes the injury rules and is a mobility exercise", () => {
   for (const client of [beginnerLumbarDiscDb, seniorKneeBandsOnly]) {
@@ -58,4 +58,40 @@ test("focus areas from prefs are honoured (Ana: glutes)", () => {
   );
   const fig4 = byId("figure-4-stretch")!;
   assert.equal(passesHardFilters(fig4, beginnerLumbarDiscDb, RULES).length, 0);
+});
+
+test("extended mobility set is suggested when its muscles were trained", () => {
+  const picks = suggestStretches(intermediateHypertrophy, CATALOGUE, RULES, {
+    trainedMuscles: ["quads", "adductors", "triceps", "calves"],
+    limit: 8,
+  });
+  const ids = picks.map((p) => p.exercise.id);
+  for (const id of ["standing-quad-stretch", "butterfly-stretch", "triceps-stretch", "knee-to-wall"]) {
+    assert.ok(ids.includes(id), `${id} should be picked when its muscles were trained`);
+  }
+  for (const p of picks) {
+    assert.equal(passesHardFilters(p.exercise, intermediateHypertrophy, RULES).length, 0);
+  }
+});
+
+test("deep-knee stretches stay excluded for patellofemoral, shallow ones still appear", () => {
+  const picks = suggestStretches(seniorKneeBandsOnly, CATALOGUE, RULES, { trainedMuscles: ["quads", "adductors"] });
+  const ids = picks.map((p) => p.exercise.id);
+  assert.ok(!ids.includes("standing-quad-stretch"), "knee range 3 > rule cap 2");
+  assert.ok(!ids.includes("frog-stretch"), "knee range 3 > rule cap 2");
+  assert.ok(ids.includes("butterfly-stretch"), "knee range 2 passes the rule and adductors were trained");
+});
+
+test("sleeper stretch stays excluded for shoulder impingement (shoulder range 3 > cap 1)", () => {
+  const picks = suggestStretches(acuteShoulder, CATALOGUE, RULES, { trainedMuscles: [] });
+  assert.ok(!picks.some((p) => ["sleeper-stretch", "chest-door-stretch", "wall-angel"].includes(p.exercise.id)));
+});
+
+test("crocodile breathing fills the breathing role and is routine-safe for every fixture", () => {
+  const br = byId("crocodile-breathing")!;
+  assert.equal(br.pattern, "mobility");
+  assert.equal(br.role, "breathing");
+  for (const client of [beginnerLumbarDiscDb, intermediateHypertrophy, seniorKneeBandsOnly, acuteShoulder]) {
+    assert.equal(passesHardFilters(br, client, RULES).length, 0, `crocodile-breathing must pass for ${client.name}`);
+  }
 });

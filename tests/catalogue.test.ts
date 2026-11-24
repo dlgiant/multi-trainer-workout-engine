@@ -4,7 +4,7 @@
 import { CATALOGUE, RULES, byId } from "../src/engine/catalogue.ts";
 import { passesHardFilters } from "../src/engine/filters.ts";
 import { rankForSlot } from "../src/engine/scoring.ts";
-import type { ClientModel, Pattern } from "../src/engine/types.ts";
+import type { BodyRegion, ClientModel, Pattern } from "../src/engine/types.ts";
 import assert from "node:assert";
 import test from "node:test";
 
@@ -33,7 +33,7 @@ test("no dangling chain references", () => {
 });
 
 test("stress values are 0-3 and equipment ids are known", () => {
-  const known = new Set(["db", "band", "bench", "barbell", "rack", "pullup-bar", "wallAnchor", "trx"]);
+  const known = new Set(["db", "band", "bench", "barbell", "rack", "pullup-bar", "wallAnchor", "trx", "rower", "bike", "treadmill"]);
   for (const ex of CATALOGUE) {
     for (const v of Object.values(ex.stress)) {
       for (const axis of ["load", "range", "impact"] as const) {
@@ -41,6 +41,14 @@ test("stress values are 0-3 and equipment ids are known", () => {
       }
     }
     for (const eq of ex.equipment) assert.ok(known.has(eq), `${ex.id} unknown equipment ${eq}`);
+  }
+});
+
+test("mobility set covers every body region with at least one stretch", () => {
+  const regions: BodyRegion[] = ["spine", "shoulder", "elbow", "wrist", "hip", "knee", "ankle"];
+  const mob = CATALOGUE.filter((x) => x.pattern === "mobility");
+  for (const r of regions) {
+    assert.ok(mob.some((x) => x.stress[r]), `no mobility entry stresses ${r}`);
   }
 });
 
