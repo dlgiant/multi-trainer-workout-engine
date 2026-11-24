@@ -2,6 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { suggestStretches } from "../src/engine/routine.ts";
+import { generateProgram } from "../src/engine/generate.ts";
 import { CATALOGUE, RULES, byId } from "../src/engine/catalogue.ts";
 import { passesHardFilters } from "../src/engine/filters.ts";
 import { acuteShoulder, beginnerLumbarDiscDb, intermediateHypertrophy, seniorKneeBandsOnly } from "./fixtures/clients.ts";
@@ -94,4 +95,24 @@ test("crocodile breathing fills the breathing role and is routine-safe for every
   for (const client of [beginnerLumbarDiscDb, intermediateHypertrophy, seniorKneeBandsOnly, acuteShoulder]) {
     assert.equal(passesHardFilters(br, client, RULES).length, 0, `crocodile-breathing must pass for ${client.name}`);
   }
+});
+
+test("generateProgram attaches an injury-safe evening routine in block mode (marco 3)", () => {
+  const p = generateProgram(beginnerLumbarDiscDb);
+  assert.ok(p.eveningRoutine && p.eveningRoutine.length >= 3, "routine suggested right after generation");
+  for (const r of p.eveningRoutine!) {
+    assert.equal(r.exercise.pattern, "mobility");
+    assert.equal(passesHardFilters(r.exercise, beginnerLumbarDiscDb, RULES).length, 0, `${r.exercise.id} must pass filters`);
+    assert.ok(r.reason.id.startsWith("stretch-"));
+  }
+  // lumbar-disc rule still applies to the auto-suggested routine
+  assert.ok(!p.eveningRoutine!.some((r) => r.exercise.id === "seated-toe-touch"));
+  // JIT mode leaves the routine to the app (trained muscles come from logs)
+  assert.equal(generateProgram(beginnerLumbarDiscDb, { mode: "jit" }).eveningRoutine, undefined);
+  // deterministic
+  const again = generateProgram(beginnerLumbarDiscDb);
+  assert.deepEqual(
+    again.eveningRoutine!.map((r) => r.exercise.id),
+    p.eveningRoutine!.map((r) => r.exercise.id),
+  );
 });
